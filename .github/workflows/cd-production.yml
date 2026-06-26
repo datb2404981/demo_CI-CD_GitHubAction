@@ -5,6 +5,11 @@
     push:
       branches: ["production"]
     
+  permissions:
+    actions: read
+    contents: read
+    security-events: write
+
   jobs:
     test:
       runs-on: ubuntu-latest

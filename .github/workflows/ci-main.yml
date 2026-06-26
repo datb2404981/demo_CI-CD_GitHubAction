@@ -1,13 +1,25 @@
-  
-  name: CI (Kiểm định)
+name: CI (Kiểm định)
 
+<<<<<<< Updated upstream
   on: 
     push: 
       branches: ["main"]
     pull_request:
       branches: ["main"]
+=======
+on: 
+  push: 
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+>>>>>>> Stashed changes
 
-  jobs:
+permissions:
+    actions: read
+    contents: read
+    security-events: write
+
+jobs:
     Test:
       runs-on: ubuntu-latest
 
