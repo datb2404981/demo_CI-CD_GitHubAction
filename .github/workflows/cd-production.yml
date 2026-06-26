@@ -1,0 +1,70 @@
+
+  name: CD (Triển khai)
+
+  on:
+    push:
+      branches: ["production"]
+    
+  jobs:
+    test:
+      runs-on: ubuntu-latest
+      strategy:
+        matrix: 
+          node-version: ["22.x"]
+      steps:
+        - uses: actions/checkout@v4
+        - name: Use Node.js ${{matrix.node-version}}
+          uses: actions/setup-node@v4
+          with:
+            node-version: ${{matrix.node-version}}
+            cache: 'npm'
+        - run: npm ci
+        - name: Test CodeQL
+          uses: github/codeql-action/init@v3
+          with:
+            languages: javascript, typescript
+        - uses: github/codeql-action/autobuild@v3
+        - name: Perform CodeQL Analysis
+          uses: github/codeql-action/analyze@v3
+        - run: npm run test
+          
+    deploy:
+      runs-on: ubuntu-latest
+      needs: test
+      steps:
+        - uses: actions/checkout@v4
+        
+        - name: Auth Docker Hub
+          uses: docker/login-action@v3
+          with:
+            username: ${{ secrets.DOCKERHUB_USERNAME }}
+            password: ${{ secrets.DOCKERHUB_TOKEN }}
+            
+        - name: Retag Docker Image (Build Once, Deploy Anywhere)
+          run: |
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/my-app-demo:main
+            docker tag ${{ secrets.DOCKERHUB_USERNAME }}/my-app-demo:main ${{ secrets.DOCKERHUB_USERNAME }}/my-app-demo:${{ github.sha }}
+            docker push ${{ secrets.DOCKERHUB_USERNAME }}/my-app-demo:${{ github.sha }}
+            
+        - name: Auth Google Cloud
+          uses: google-github-actions/auth@v2
+          with:
+            credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+            
+        - name: Deploy to Cloud Run
+          uses: google-github-actions/deploy-cloudrun@v2
+          with:
+            service: 'my-app-demo'
+            image: 'docker.io/${{ secrets.DOCKERHUB_USERNAME }}/my-app-demo:${{ github.sha }}'
+            region: 'asia-southeast1'
+        - name: Notify Slack
+          if: always()
+          uses: slackapi/slack-github-action@v1.24.0
+          with:
+            payload: |
+              {
+                "text": "${{ job.status == 'success' && '✅ CI/CD Pipeline Thành Công!' || '❌ CI/CD Pipeline Thất Bại!' }}\n- Nhánh (Branch): `${{ github.ref_name }}`\\n- Người thực hiện: `${{ github.actor }}`\\n- Xem chi tiết: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+              }
+          env: 
+            SLACK_WEBHOOK_URL: ${{secrets.SLACK_WEBHOOK_URL}}
+            SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
