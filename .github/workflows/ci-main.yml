@@ -1,18 +1,10 @@
 name: CI (Kiểm định)
 
-<<<<<<< Updated upstream
-  on: 
-    push: 
-      branches: ["main"]
-    pull_request:
-      branches: ["main"]
-=======
 on: 
   push: 
     branches: ["main"]
   pull_request:
     branches: ["main"]
->>>>>>> Stashed changes
 
 permissions:
     actions: read
