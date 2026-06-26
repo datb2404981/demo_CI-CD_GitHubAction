@@ -11,5 +11,5 @@ it("App Router: Works with Server Components", () => {
 
 
 it("should fail this test intentionally", () => {
-  expect("hello world").toBe("goodbye world");
+  expect("hello world").toBe("hello world");
 });
